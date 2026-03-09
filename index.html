@@ -4,36 +4,174 @@
   <meta charset="UTF-8">
   <title>Интерактивный диктант</title>
   <style>
-    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f6f6fa; margin:0; padding: 0; }
-    #dictation-game { max-width: 730px; margin: 40px auto; padding: 30px; background: #fff; box-shadow: 0 2px 8px #dedede; border-radius: 10px;}
-    .task-list { display: flex; flex-wrap: wrap; gap: 22px; justify-content: center; margin-bottom: 25px; }
-    .task-tile { width:170px; min-height: 184px; border:2px solid #ddaada; border-radius:10px; background:#faf7ff; cursor:pointer; display:flex;flex-direction:column;align-items:center;justify-content:center; position:relative; transition: box-shadow 0.2s;}
-    .task-tile.solved { filter: grayscale(0.75); opacity:0.6; pointer-events:none;}
-    .task-tile img { max-width:130px; max-height:120px; margin-bottom: 5px; }
-    .no-image { width:130px; height:120px;display:flex;align-items:center;justify-content:center;background:#f4e5f5;color:#bd79a8;font-size:15px;border-radius:7px;margin-bottom:5px;}
-    .def { padding:24px 12px;text-align:center; color:#555; }
-    .success-overlay { position:absolute; left:0;right:0; top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center; background:#fff8; border-radius:10px; font-weight:bold;}
-    .success-overlay img { max-width:70px; margin-top:10px;}
+    html, body {
+      font-family: 'Segoe UI', Arial, sans-serif; 
+      background: transparent !important; 
+      margin: 0; 
+      padding: 0;
+    }
+    #dictation-game {
+      max-width: 730px;
+      margin: 40px auto;
+      padding: 30px;
+      background: transparent; /* Прозрачный фон */
+      box-shadow: none;
+      border-radius: 0;
+    }
+    .task-list { 
+      display: flex; 
+      flex-wrap: wrap; 
+      gap: 22px; 
+      justify-content: center; 
+      margin-bottom: 25px; 
+    }
+    .task-tile { 
+      width:170px; 
+      min-height: 184px; 
+      border:2px solid #ddaada; 
+      border-radius:10px; 
+      background: transparent; /* Прозрачный фон у карточки */
+      cursor:pointer; 
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center; 
+      position:relative; 
+      transition: box-shadow 0.2s;
+    }
+    .task-tile.solved { 
+      filter: grayscale(0.75); 
+      opacity:0.6; 
+      pointer-events:none;
+    }
+    .task-tile img { 
+      max-width:130px; 
+      max-height:120px; 
+      margin-bottom: 5px; 
+    }
+    .no-image { 
+      width:130px; 
+      height:120px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:rgba(244,229,245,0.5); /* Полупрозрачная заглушка */
+      color:#bd79a8;
+      font-size:15px;
+      border-radius:7px;
+      margin-bottom:5px;
+    }
+    .def { 
+      padding:24px 12px;
+      text-align:center; 
+      color:#555; 
+      background:transparent;
+    }
+    .success-overlay { 
+      position:absolute; 
+      left:0;right:0; top:0;bottom:0;
+      display:flex;
+      flex-direction:column;
+      align-items:center;justify-content:center; 
+      background:rgba(255,255,255,0.7); /* полупрозрачная белая плашка */
+      border-radius:10px; 
+      font-weight:bold;
+    }
+    .success-overlay img { 
+      max-width:70px; 
+      margin-top:10px;
+    }
     .task-view { text-align:center; }
     .easy-task, .hard-task { margin:28px 0; }
-    #letter-box { min-height: 48px; display:inline-block;padding:9px 6px;border:1px dashed #ccc; border-radius:7px;background:#fff;}
-    #letter-box .letter { display:inline-block; font-size:24px; background:#efddf5; margin:0 2px; padding:7px 13px; border-radius:6px; margin-bottom:3px; cursor:grab; user-select:none;}
-    .hard-task input { font-size:22px; padding:7px 12px; border-radius:6px; border:1px solid #bc9dce; }
-    button { background:#833c94; color:#fff; border:0; padding:7px 18px; border-radius:7px; font-size:17px; cursor:pointer; margin-top:8px;}
-    #positive-feedback { margin-top:22px; font-size:20px;}
-    #positive-feedback img { max-width:70px; margin-top:10px; }
-    .scale { margin-top:30px; text-align:center; }
+    #letter-box { 
+      min-height: 48px; 
+      display:inline-block;
+      padding:9px 6px;
+      border:1px dashed #ccc; 
+      border-radius:7px;
+      background:rgba(255,255,255,0.5); /* Полупрозрачная белая подложка */
+    }
+    #letter-box .letter { 
+      display:inline-block; 
+      font-size:24px; 
+      background:rgba(239,221,245,0.7); 
+      margin:0 2px; 
+      padding:7px 13px; 
+      border-radius:6px; 
+      margin-bottom:3px; 
+      cursor:grab; 
+      user-select:none;
+    }
+    .hard-task input { 
+      font-size:22px; 
+      padding:7px 12px; 
+      border-radius:6px; 
+      border:1px solid #bc9dce; 
+    }
+    button { 
+      background:#833c94; 
+      color:#fff; 
+      border:0; 
+      padding:7px 18px; 
+      border-radius:7px; 
+      font-size:17px; 
+      cursor:pointer; 
+      margin-top:8px;
+    }
+    #positive-feedback { 
+      margin-top:22px; 
+      font-size:20px;
+    }
+    #positive-feedback img { 
+      max-width:70px; 
+      margin-top:10px; 
+    }
+    .scale { 
+      margin-top:30px; 
+      text-align:center; 
+    }
     .circle { 
-      display:inline-block; width:32px; height:32px;
-      line-height:32px; background:#ece4f5;
-      border-radius:50%; margin:0 4px; font-size:21px;
-      vertical-align:middle; cursor:pointer; color:#833c94;
-      transition:background 0.2s, color 0.2s, border 0.2s;}
+      display:inline-block; 
+      width:32px; 
+      height:32px;
+      line-height:32px; 
+      background:rgba(236,228,245,0.5);
+      border-radius:50%; 
+      margin:0 4px; 
+      font-size:21px;
+      vertical-align:middle; 
+      cursor:pointer; 
+      color:#833c94;
+      transition:background 0.2s, color 0.2s, border 0.2s;
+    }
     .circle.selected { background:#833c94; color:#fff;}
-    #final-feedback {text-align:center; font-size:19px; margin-top:23px;}
-    .game-controls {display: flex; justify-content: end; align-items: center;gap:15px;margin-bottom: 10px;}
-    .desc { background:#e7d3f1; color:#49285d; border-radius:7px; font-size:17px; padding:9px 11px; margin: 0 auto 22px auto; max-width: 550px;}
-    select {padding:7px 9px; border-radius:6px; border:1px solid #bc9dce;}
+    #final-feedback {
+      text-align:center; 
+      font-size:19px; 
+      margin-top:23px;
+      background:transparent;
+    }
+    .game-controls {
+      display: flex; 
+      justify-content: end; 
+      align-items: center;
+      gap:15px;
+      margin-bottom: 10px;
+    }
+    .desc { 
+      background:rgba(231, 211, 241, 0.6); 
+      color:#49285d; 
+      border-radius:7px; 
+      font-size:17px; 
+      padding:9px 11px; 
+      margin: 0 auto 22px auto; 
+      max-width: 550px;
+    }
+    select {
+      padding:7px 9px; 
+      border-radius:6px; 
+      border:1px solid #bc9dce;
+    }
   </style>
 </head>
 <body>
@@ -68,10 +206,8 @@
         final_3: "Try again!",
         select_language: "Interface language"
       }
-      // Можно добавить другие языки аналогично.
     };
 
-    // Все надписи берем отсюда по текущему языку!
     let currentLang = "ru";
 
     // Конфиг игры
@@ -80,7 +216,7 @@
       words: [
         {
           id: 1,
-          image: "https://upload.wikimedia.org/wikipedia/commons/6/6e/Golde33443.jpg", // real image link
+          image: "https://upload.wikimedia.org/wikipedia/commons/6/6e/Golde33443.jpg",
           definition: null,
           answer: "КОТ",
           feedback: {
@@ -125,7 +261,6 @@
       return trset[key] || key;
     }
 
-    // Главное: язык, описание, задания
     function renderMain() {
       const container = document.getElementById('dictation-game');
       let allSolved = gameConfig.words.every(w => gameState.solved.includes(w.id));
@@ -159,14 +294,11 @@
         <div id="progress-scale">${renderScale()}</div>
         ${allSolved ? `<div id="final-feedback">${renderFinalFeedback()}</div>` : ''}
       `;
-      // Проверить загрузку картинок
       setTimeout(checkImages,100);
     }
 
-    // Рендер картинки или дефиниции
     function renderImageOrDef(word) {
       if (word.image) {
-        // Универсальная заглушка, если картинка недоступна
         return `
           <img src="${word.image}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"/>
           <div class="no-image" style="display:none;">${tr("no_image")}</div>
@@ -178,7 +310,6 @@
       return `<div class="no-image">${tr("no_image")}</div>`;
     }
 
-    // Проверить (иногда сразу не отрабатывает onerror)
     function checkImages() {
       document.querySelectorAll('.task-tile img').forEach(img=>{
         if(!img.complete || img.naturalWidth===0) {
@@ -193,7 +324,6 @@
       renderMain();
     };
 
-    // Открытие задания
     window.openTask = function(id) {
       const word = gameConfig.words.find(w => w.id === id);
       if(gameState.solved.includes(id)) return;
@@ -293,7 +423,6 @@
       renderMain();
     };
 
-    // Прогресс-скала
     function renderScale() {
       let lastMark = gameState.scaleMark;
       let allDone = gameConfig.words.every((w,i)=>gameState.solved.includes(w.id));
