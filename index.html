@@ -10,6 +10,7 @@
     .task-tile { width:170px; min-height: 184px; border:2px solid #ddaada; border-radius:10px; background:#faf7ff; cursor:pointer; display:flex;flex-direction:column;align-items:center;justify-content:center; position:relative; transition: box-shadow 0.2s;}
     .task-tile.solved { filter: grayscale(0.75); opacity:0.6; pointer-events:none;}
     .task-tile img { max-width:130px; max-height:120px; margin-bottom: 5px; }
+    .no-image { width:130px; height:120px;display:flex;align-items:center;justify-content:center;background:#f4e5f5;color:#bd79a8;font-size:15px;border-radius:7px;margin-bottom:5px;}
     .def { padding:24px 12px;text-align:center; color:#555; }
     .success-overlay { position:absolute; left:0;right:0; top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center; background:#fff8; border-radius:10px; font-weight:bold;}
     .success-overlay img { max-width:70px; margin-top:10px;}
@@ -30,33 +31,70 @@
       transition:background 0.2s, color 0.2s, border 0.2s;}
     .circle.selected { background:#833c94; color:#fff;}
     #final-feedback {text-align:center; font-size:19px; margin-top:23px;}
+    .game-controls {display: flex; justify-content: end; align-items: center;gap:15px;margin-bottom: 10px;}
+    .desc { background:#e7d3f1; color:#49285d; border-radius:7px; font-size:17px; padding:9px 11px; margin: 0 auto 22px auto; max-width: 550px;}
+    select {padding:7px 9px; border-radius:6px; border:1px solid #bc9dce;}
   </style>
 </head>
 <body>
   <div id="dictation-game"></div>
 
   <script>
-    // ПОКАЗАТЕЛЬНАЯ КОНФИГУРАЦИЯ — здесь редактируем слова, че использовать (image/definition), фидбэки, лексика итд
+    // Тексты для разных языков
+    const TRANSLATIONS = {
+      "ru": {
+        title: "Интерактивный диктант",
+        instruction_easy: "Нажмите на карточку и переставьте буквы в правильном порядке, чтобы получить слово.",
+        instruction_hard: "Нажмите на карточку и напечатайте слово полностью.",
+        no_image: "Нет изображения",
+        btn_check: "Проверить",
+        btn_back: "Вернуться",
+        scale: "Отметь свой результат:",
+        final_1: "Ты потрясающе справился!",
+        final_2: "Еще чуть-чуть до совершенства!",
+        final_3: "Попробуй еще раз!",
+        select_language: "Язык интерфейса"
+      },
+      "en": {
+        title: "Interactive dictation",
+        instruction_easy: "Click a card and re-arrange the letters in the correct order to get the word.",
+        instruction_hard: "Click a card and type the word fully.",
+        no_image: "No image",
+        btn_check: "Check",
+        btn_back: "Back",
+        scale: "Mark your result:",
+        final_1: "Fantastic job!",
+        final_2: "Just a little bit to perfection!",
+        final_3: "Try again!",
+        select_language: "Interface language"
+      }
+      // Можно добавить другие языки аналогично.
+    };
+
+    // Все надписи берем отсюда по текущему языку!
+    let currentLang = "ru";
+
+    // Конфиг игры
     const gameConfig = {
       level: "easy", // "easy" — собрать слово из букв; "hard" — ввести вручную
       words: [
         {
           id: 1,
-          image: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Golde33443.jpg/220px-Golde33443.jpg",
+          image: "https://upload.wikimedia.org/wikipedia/commons/6/6e/Golde33443.jpg", // real image link
           definition: null,
           answer: "КОТ",
           feedback: {
-            text: "Отлично, верно!",
+            text: {ru:"Отлично, верно!",en:"Great, correct!"},
             gif: ""
           }
         },
         {
           id: 2,
           image: null,
-          definition: "Домашнее животное, лающее на почтальона",
+          definition: {ru:"Домашнее животное, лающее на почтальона",en:"A pet barking at the postman"},
           answer: "СОБАКА",
           feedback: {
-            text: "Молодец!",
+            text: {ru:"Молодец!",en:"Well done!"},
             gif: "https://media.giphy.com/media/v6aOjy0Qo1fIA/giphy.gif"
           }
         },
@@ -66,16 +104,15 @@
           definition: null,
           answer: "ЯБЛОКО",
           feedback: {
-            text: "Верно! 👍",
+            text: {ru:"Верно! 👍",en:"Correct! 👍"},
             gif: ""
           }
         }
       ],
-      finalFeedbackScale: [
-        "Ты потрясающе справился!",
-        "Еще чуть-чуть до совершенства!",
-        "Попробуй еще раз!"
-      ]
+      finalFeedbackScale: {
+        ru:["Ты потрясающе справился!","Еще чуть-чуть до совершенства!","Попробуй еще раз!"],
+        en:["Fantastic job!","Just a little bit to perfection!","Try again!"]
+      }
     };
 
     const gameState = {
@@ -83,18 +120,37 @@
       scaleMark: null
     };
 
-    // Основной рендер игры
+    function tr(key) {
+      let trset = TRANSLATIONS[currentLang] || TRANSLATIONS["ru"];
+      return trset[key] || key;
+    }
+
+    // Главное: язык, описание, задания
     function renderMain() {
       const container = document.getElementById('dictation-game');
       let allSolved = gameConfig.words.every(w => gameState.solved.includes(w.id));
       container.innerHTML = `
+        <div class="game-controls">
+          <label for="lang">${tr('select_language')}:</label>
+          <select id="lang" onchange="changeLang(event)">
+            ${Object.keys(TRANSLATIONS).map(lang=>
+              `<option value="${lang}" ${lang===currentLang?"selected":""}>${lang.toUpperCase()}</option>`
+            ).join('')}
+          </select>
+        </div>
+        <h2 style="margin-bottom:10px;">${tr("title")}</h2>
+        <div class="desc">${
+          gameConfig.level === "easy"
+              ? tr("instruction_easy")
+              : tr("instruction_hard")
+        }</div>
         <div class="task-list">
           ${gameConfig.words.map(word => `
             <div class="task-tile${gameState.solved.includes(word.id) ? ' solved' : ''}" onclick="openTask(${word.id})">
-              ${word.image ? `<img src="${word.image}">` : `<div class="def">${word.definition}</div>`}
+              ${renderImageOrDef(word)}
               ${gameState.solved.includes(word.id) ?
                 `<div class="success-overlay">
-                  <span>${word.feedback.text}</span>
+                  <span>${word.feedback.text[currentLang] || word.feedback.text["ru"] || ""}</span>
                   ${word.feedback.gif ? `<img src="${word.feedback.gif}">` : ''}
                 </div>` : ''}
             </div>
@@ -103,7 +159,39 @@
         <div id="progress-scale">${renderScale()}</div>
         ${allSolved ? `<div id="final-feedback">${renderFinalFeedback()}</div>` : ''}
       `;
+      // Проверить загрузку картинок
+      setTimeout(checkImages,100);
     }
+
+    // Рендер картинки или дефиниции
+    function renderImageOrDef(word) {
+      if (word.image) {
+        // Универсальная заглушка, если картинка недоступна
+        return `
+          <img src="${word.image}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"/>
+          <div class="no-image" style="display:none;">${tr("no_image")}</div>
+        `;
+      }
+      if (word.definition) {
+        return `<div class="def">${typeof word.definition === 'string' ? word.definition : (word.definition[currentLang] || word.definition["ru"] || "")}</div>`;
+      }
+      return `<div class="no-image">${tr("no_image")}</div>`;
+    }
+
+    // Проверить (иногда сразу не отрабатывает onerror)
+    function checkImages() {
+      document.querySelectorAll('.task-tile img').forEach(img=>{
+        if(!img.complete || img.naturalWidth===0) {
+          img.style.display = "none";
+          if (img.nextElementSibling) img.nextElementSibling.style.display='flex';
+        }
+      });
+    }
+
+    window.changeLang = function(e){
+      currentLang = e.target.value || "ru";
+      renderMain();
+    };
 
     // Открытие задания
     window.openTask = function(id) {
@@ -111,13 +199,23 @@
       if(gameState.solved.includes(id)) return;
       const container = document.getElementById('dictation-game');
       container.innerHTML = `
+        <div class="game-controls">
+          <label for="lang">${tr('select_language')}:</label>
+          <select id="lang" onchange="changeLang(event)">
+            ${Object.keys(TRANSLATIONS).map(lang=>
+              `<option value="${lang}" ${lang===currentLang?"selected":""}>${lang.toUpperCase()}</option>`
+            ).join('')}
+          </select>
+        </div>
+        <h2 style="margin-bottom:10px;">${tr("title")}</h2>
+        <div class="desc">${ gameConfig.level === "easy" ? tr("instruction_easy") : tr("instruction_hard") }</div>
         <div class="task-view">
-          ${word.image ? `<img src="${word.image}">` : `<div class="def">${word.definition}</div>`}
+          ${renderImageOrDef(word)}
           ${gameConfig.level === "easy" ? renderEasyTask(word) : renderHardTask(word)}
           <div id="positive-feedback" style="display:none;">
-            <span>${word.feedback.text}</span>
+            <span>${word.feedback.text[currentLang] || word.feedback.text["ru"] || ""}</span>
             ${word.feedback.gif ? `<img src="${word.feedback.gif}">` : ''}
-            <br><button onclick="markSolvedAndReturn(${word.id})">Вернуться</button>
+            <br><button onclick="markSolvedAndReturn(${word.id})">${tr("btn_back")}</button>
           </div>
         </div>
       `;
@@ -129,27 +227,26 @@
         });
         inp.focus();
       }
-    }
+      setTimeout(checkImages,100);
+    };
 
-    // Easy: буквы вперемешку
     function renderEasyTask(word) {
       const shuffled = shuffle(word.answer.split(''));
       return `
         <div class="easy-task">
           <div id="letter-box">${shuffled.map(l=>`<span class="letter" draggable="true">${l}</span>`).join('')}</div>
           <div style="margin-top:12px;">
-            <button onclick="checkEasyAnswer('${word.answer}')">Проверить</button>
+            <button onclick="checkEasyAnswer('${word.answer}')">${tr("btn_check")}</button>
           </div>
         </div>
       `;
     }
 
-    // Hard: ручной ввод
     function renderHardTask(word) {
       return `
         <div class="hard-task">
-          <input type="text" id="input-answer" autocomplete="off" placeholder="Введите слово"/>
-          <button onclick="checkHardAnswer('${word.answer}')">Проверить</button>
+          <input type="text" id="input-answer" autocomplete="off" placeholder="${tr("btn_check")}"/>
+          <button onclick="checkHardAnswer('${word.answer}')">${tr("btn_check")}</button>
         </div>
       `;
     }
@@ -158,7 +255,6 @@
       return arr.map(x=>[Math.random(),x]).sort().map(a=>a[1]);
     }
 
-    // Drag and Drop (easy mode)
     function enableDragAndDrop() {
       let dragSrcEl = null;
       document.querySelectorAll('#letter-box .letter').forEach(el=>{
@@ -178,17 +274,15 @@
       });
     }
 
-    // Easy: проверка
     window.checkEasyAnswer = function(answer) {
       const letters = [...document.querySelectorAll('#letter-box .letter')].map(l => l.textContent).join('');
       if(letters.toUpperCase() === answer.toUpperCase()) showPositiveFeedback();
-    }
+    };
 
-    // Hard: проверка
     window.checkHardAnswer = function(answer) {
       const val = document.getElementById('input-answer').value;
       if(val.trim().toUpperCase() === answer.toUpperCase()) showPositiveFeedback();
-    }
+    };
 
     function showPositiveFeedback() {
       document.getElementById('positive-feedback').style.display = 'block';
@@ -197,7 +291,7 @@
     window.markSolvedAndReturn = function(id){
       if (!gameState.solved.includes(id)) gameState.solved.push(id);
       renderMain();
-    }
+    };
 
     // Прогресс-скала
     function renderScale() {
@@ -208,23 +302,22 @@
         html += `<span class="circle${lastMark==i?" selected":""}" onclick="markScale(${i})">${lastMark!==null && i<=lastMark?'✔️':''}</span>`;
       }
       return allDone
-        ? `<div class="scale"><div>Отметь свой результат:</div>${html}</div>`
+        ? `<div class="scale"><div>${tr("scale")}</div>${html}</div>`
         : '';
     }
 
     window.markScale = function(i){
       gameState.scaleMark = i;
       renderMain();
-    }
+    };
 
-    // Финальный фидбек
     function renderFinalFeedback() {
       if(gameState.scaleMark===null) return '';
       const n = gameConfig.words.length;
       const mark = gameState.scaleMark+1;
-      if(mark >= n) return gameConfig.finalFeedbackScale[0];
-      if(mark===n-1) return gameConfig.finalFeedbackScale[1];
-      return gameConfig.finalFeedbackScale[2];
+      if(mark >= n) return gameConfig.finalFeedbackScale[currentLang][0];
+      if(mark===n-1) return gameConfig.finalFeedbackScale[currentLang][1];
+      return gameConfig.finalFeedbackScale[currentLang][2];
     }
 
     // запуск игры
