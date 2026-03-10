@@ -5,24 +5,26 @@
   <title>Интерактивный диктант</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    body { background: #f7faff; font-family: 'Segoe UI',sans-serif; color:#232056; margin:0;}
-    #main-page { display: flex; flex-wrap: wrap; gap: 24px; margin:16px 0 32px 0; justify-content:center;}
+    body { background: #f7faff; font-family: 'Segoe UI',sans-serif; color:#232056; margin:0; }
+    .container { max-width:680px; margin: 34px auto 30px auto; padding:24px 0 12px 0; }
+    #top-panel { display: flex; gap:18px; align-items:center; justify-content:flex-end; margin-bottom:16px; }
+    #main-page { display: flex; flex-wrap: wrap; gap: 24px; margin: 0 0 32px 0; justify-content:center;}
     .task-card {
       background: #fafaff;
       border-radius: 14px;
       box-shadow: 0 1px 8px #d9dbe7;
       padding: 18px;
-      text-align: center;
       width: 144px;
       min-height: 130px;
       cursor: pointer;
       position: relative;
       font-size: 17px;
       transition: opacity 0.4s;
-      display: flex; flex-direction: column; justify-content:center; align-items:center;
+      display: flex; flex-direction: column; align-items:center; justify-content:center;
       min-height:150px;
+      text-align:center;
     }
-    .task-card[disabled] { pointer-events: none; opacity: 0.5; }
+    .task-card[disabled] { pointer-events: none; opacity: 0.53; }
     .success-tag {
       position: absolute;
       top: 8px;
@@ -66,72 +68,142 @@
       user-select: none;
       transition: background .23s;
     }
-    .draggable-letter.drag-over {
-      background: #ffea80;
-      border: 2px solid #e0ad00;
-    }
+    .draggable-letter.drag-over { background: #ffea80; border: 2px solid #e0ad00; }
     .letters-box.touch-mode .draggable-letter {cursor:pointer;}
     #progress-bar {margin: 22px 0 18px 0; text-align:center;}
     #progress-feedback {margin-left: 15px; color:#14914c; font-weight:500;}
-    @media(max-width:600px){
-      #task-modal>div { min-width:0; width:90vw;}
-      .task-card {width:45vw; min-width:116px;}
+    #level-select {margin:0 0 18px 0; text-align:center;}
+    #level-select button {margin:0 8px;padding:6px 14px;border-radius:8px;border: 1.5px solid #bcc1de;background:#fff;font-size:17px;cursor:pointer;}
+    #level-select .selected, #level-select button:hover {background:#e3e6fa;}
+    @media(max-width:700px){
+      .container {max-width:99vw;padding:0}
+    }
+    @media(max-width:680px){
+      #task-modal>div { min-width:0; width:92vw;}
+      .task-card {width:46vw; min-width:116px;}
     }
   </style>
 </head>
 <body>
-<div id="main-page"></div>
-<div id="task-modal"></div>
-<div id="progress-bar">
-  <label>Отметь свой прогресс:
-    <input type="range" id="progress-range" min="0" max="3" value="0">
-  </label>
-  <span id="progress-feedback"></span>
+<div class="container">
+  <div id="top-panel">
+    <label>
+      <span id="ui-lang-label">Язык:</span>
+      <select id="lang-switch">
+        <option value="ru">Русский</option>
+        <option value="en">English</option>
+      </select>
+    </label>
+  </div>
+  <div id="level-select"></div>
+  <div id="main-page"></div>
+  <div id="progress-bar">
+    <label id="ui-progress-label">Отметь свой прогресс:
+      <input type="range" id="progress-range" min="0" max="3" value="0">
+    </label>
+    <span id="progress-feedback"></span>
+  </div>
 </div>
+<div id="task-modal"></div>
 <script>
+// ----- Интерфейсные надписи -----
+const UI = {
+  ru: {
+    easy: 'Лёгкий',
+    hard: 'Сложный',
+    easy_desc: 'Переставь буквы',
+    hard_desc: 'Впечатай слово самостоятельно',
+    choose_level: 'Выбери уровень сложности:',
+    task_drag: 'Собери слово:',
+    task_input: 'Введи слово:',
+    check: 'Проверить',
+    back: 'Назад',
+    to_main: 'На главную',
+    progress: 'Отметь свой прогресс:',
+    feedback: ['Ещё всё впереди!','Хороший старт!','Ты почти у цели!','Великолепно! Всё получилось!'],
+    lang_label: 'Язык:',
+  },
+  en: {
+    easy: 'Easy',
+    hard: 'Hard',
+    easy_desc: 'Arrange letters',
+    hard_desc: 'Type the word',
+    choose_level: 'Choose difficulty:',
+    task_drag: 'Make a word:',
+    task_input: 'Type the word:',
+    check: 'Check',
+    back: 'Back',
+    to_main: 'To main',
+    progress: 'Mark your progress:',
+    feedback: ['Still ahead!', 'Good start!', 'Almost there!', 'Great! Everything is done!'],
+    lang_label: 'Language:',
+  }
+};
+
 // ----- Настраиваемые задания -----
 const dictationTasks = [
   {
-    id: 1,
+    id: 1, language: 'ru',
     type: 'image',
     image: 'https://www.kindpng.com/picc/m/21-214439_cat-png-image-cartoon-cat-png-transparent-png.png',
     definition: '',
     answer: 'кот',
-    feedback: 'Верно! 🐾',
-    mode: 'letters'
+    feedback: 'Верно! 🐾'
   },
   {
-    id: 2,
+    id: 2, language: 'ru',
     type: 'definition',
     image: '',
     definition: 'Маленькое пушистое домашнее животное, мурлычет.',
     answer: 'кот',
-    feedback: 'Прекрасно!',
-    mode: 'input'
+    feedback: 'Прекрасно!'
   },
   {
-    id: 3,
+    id: 3, language: 'en',
     type: 'image',
-    image: 'https://pngimg.com/uploads/dog/dog_PNG50348.png',
+    image: 'https://static.vecteezy.com/system/resources/previews/021/548/122/original/cute-cartoon-dog-clipart-element-png.png',
     definition: '',
-    answer: 'пёс',
-    feedback: '👏 Готово!',
-    mode: 'letters'
+    answer: 'dog',
+    feedback: 'Good!'
+  },
+  {
+    id: 4, language: 'en',
+    type: 'definition',
+    image: '',
+    definition: 'A small, furry, domesticated animal that barks.',
+    answer: 'dog',
+    feedback: 'Nice!'
   }
 ];
-// --------------------------------
+// ---------------------------------
 let currentTask = null;
 let doneTasks = {};
+let currentLang = 'ru';
+let currentLevel = null; // 'easy' | 'hard'
 const progressRange = document.getElementById('progress-range');
 progressRange.max = dictationTasks.length;
 
+function renderLevelSelect() {
+  const div = document.getElementById('level-select');
+  div.innerHTML = `<div style="margin-bottom:12px;">
+    <span style="font-weight:500;">${UI[currentLang].choose_level}</span>
+    <button id="level-easy" class="${currentLevel==='easy'?'selected':''}">${UI[currentLang].easy}</button>
+    <button id="level-hard" class="${currentLevel==='hard'?'selected':''}">${UI[currentLang].hard}</button>
+    </div>
+    <div style="font-size:15px;color:#869;">🟢 <b>${UI[currentLang].easy}</b>: ${UI[currentLang].easy_desc}<br>
+    🔵 <b>${UI[currentLang].hard}</b>: ${UI[currentLang].hard_desc}</div>
+  `;
+  document.getElementById('level-easy').onclick = ()=>{currentLevel='easy'; renderLevelSelect(); renderMainPage();};
+  document.getElementById('level-hard').onclick = ()=>{currentLevel='hard'; renderLevelSelect(); renderMainPage();};
+}
+
 function renderMainPage() {
+  if (!currentLevel) { document.getElementById('main-page').innerHTML = ""; return; }
   const main = document.getElementById('main-page');
   main.innerHTML = '';
-  dictationTasks.forEach(task => {
+  dictationTasks.filter(task=>task.language===currentLang).forEach(task => {
     const card = document.createElement('div');
     card.className = 'task-card';
-    // Затемнение и плашка успеха
     if (doneTasks[task.id]) {
       card.setAttribute('disabled', '');
       const success = document.createElement('div');
@@ -143,7 +215,6 @@ function renderMainPage() {
       }
       card.appendChild(success);
     }
-    // Контент карточки
     if (task.type === 'image') {
       card.innerHTML += `<div><img src="${task.image}" alt="task" style="width:70px;"></div>`;
     } else {
@@ -159,43 +230,41 @@ function openTask(task) {
   const modal = document.getElementById('task-modal');
   modal.style.display = 'flex';
   let taskModal = document.createElement('div');
-  if (task.mode === 'letters') {
+  if (currentLevel==='easy') {
     let shuffled = shuffleLetters(task.answer);
     taskModal.innerHTML = `
-      <div>Собери слово:</div>
+      <div>${UI[currentLang].task_drag}</div>
       <div class="letters-box" id="letters-box">${
         shuffled.map((letter, i) =>
           `<span class="draggable-letter" draggable="true" data-index="${i}">${letter}</span>`
         ).join('')
       }</div>
-      <button onclick="checkLettersAnswer()" style="margin-bottom:16px;">Проверить</button>
+      <button onclick="checkLettersAnswer()" style="margin-bottom:16px;">${UI[currentLang].check}</button>
       <div id="feedback"></div>
-      <button onclick="closeTask()" style="margin-top:12px;">Назад</button>
+      <button onclick="closeTask()" style="margin-top:12px;">${UI[currentLang].back}</button>
     `;
     modal.innerHTML = '';
     modal.appendChild(taskModal);
     enableDragAndDropTouch();
   } else {
-    // Режим ввода текста
     taskModal.innerHTML = `
-      <div>Введи слово:</div>
+      <div>${UI[currentLang].task_input}</div>
       <input type="text" id="text-input" autocomplete="off" style="font-size:22px;padding:4px;text-align:center;">
-      <button onclick="checkTextInput()" style="margin-left:10px;">Проверить</button>
+      <button onclick="checkTextInput()" style="margin-left:10px;">${UI[currentLang].check}</button>
       <div id="feedback"></div>
-      <button onclick="closeTask()" style="display:block;margin:18px auto 0;">Назад</button>
+      <button onclick="closeTask()" style="display:block;margin:18px auto 0;">${UI[currentLang].back}</button>
     `;
     modal.innerHTML = '';
     modal.appendChild(taskModal);
     setTimeout(()=>document.getElementById('text-input').focus(), 100);
   }
 }
-// --- Drag & Drop и Touch для букв ---
+
 function enableDragAndDropTouch() {
   let dragged = null;
   const box = document.getElementById('letters-box');
   const letters = box.querySelectorAll('.draggable-letter');
-
-  // Для Desktop
+  // Drag and Drop (for Desktop)
   letters.forEach(l => {
     l.addEventListener('dragstart', function(e){
       dragged = this;
@@ -223,29 +292,19 @@ function enableDragAndDropTouch() {
       letters.forEach(el => el.classList.remove('drag-over'));
     });
   });
-  // Мобильный touch: тапаем две буквы по очереди — меняем местами
+  // Touch: тапаем две буквы — меняем местами
   let firstTap = null;
   box.classList.remove('touch-mode');
   if ('ontouchstart' in window) {
     box.classList.add('touch-mode');
     letters.forEach(l => l.ontouchend = (e)=>{
       e.preventDefault();
-      if (firstTap===null) {
-        firstTap = l;
-        l.style.background = "#ffe683";
-      } else if (firstTap!==l) {
-        swapElems(firstTap,l);
-        firstTap.style.background = "";
-        firstTap = null;
-      } else {
-        firstTap.style.background = "";
-        firstTap = null;
-      }
+      if (firstTap===null) { firstTap = l; l.style.background = "#ffe683"; }
+      else if (firstTap!==l) {swapElems(firstTap,l); firstTap.style.background = ""; firstTap=null;}
+      else {firstTap.style.background = ""; firstTap = null;}
     });
     document.body.ontouchstart = (e)=>{
-      if(firstTap && !e.target.classList.contains('draggable-letter')) {
-        firstTap.style.background = ""; firstTap=null;
-      }
+      if(firstTap && !e.target.classList.contains('draggable-letter')) {firstTap.style.background = ""; firstTap=null;}
     }
   }
 }
@@ -258,9 +317,7 @@ function shuffleLetters(word) {
   let arr = word.split('');
   if(arr.length<=3) return arr;
   let shuffled;
-  do {
-    shuffled = arr.slice().sort(()=>Math.random()-0.5);
-  } while(shuffled.join('')===word);
+  do {shuffled = arr.slice().sort(()=>Math.random()-0.5);} while(shuffled.join('')===word);
   return shuffled;
 }
 function checkLettersAnswer() {
@@ -277,7 +334,7 @@ function showPositiveFeedback() {
   area.innerHTML = isGif ?
     `<img src="${currentTask.feedback}" alt="success" style="width:85px;">` :
     `<span style="font-size:22px;color:#208a4e;font-weight:bold;">${currentTask.feedback}</span><br>`;
-  area.innerHTML += `<button onclick="finishTask()" style="margin:16px auto 0;">На главную</button>`;
+  area.innerHTML += `<button onclick="finishTask()" style="margin:16px auto 0;">${UI[currentLang].to_main}</button>`;
 }
 function closeTask() {
   document.getElementById('task-modal').style.display = 'none';
@@ -288,20 +345,32 @@ function finishTask() {
   closeTask();
   updateProgressRange();
 }
-const RANGE_FEEDBACKS = [
-  'Ещё всё впереди!',
-  'Хороший старт!',
-  'Ты почти у цели!',
-  'Великолепно! Всё получилось!'
-];
 function updateProgressRange() {
   const range = document.getElementById('progress-range');
   const feedback = document.getElementById('progress-feedback');
-  range.value = Object.keys(doneTasks).length;
-  let idx = Math.min(range.value, RANGE_FEEDBACKS.length-1);
-  feedback.textContent = RANGE_FEEDBACKS[idx];
+  const tasksCount = dictationTasks.filter(t=>t.language===currentLang).length;
+  const doneCount = dictationTasks.filter(t=>t.language===currentLang && doneTasks[t.id]).length;
+  range.max = tasksCount;
+  range.value = doneCount;
+  let idx = Math.min(range.value, UI[currentLang].feedback.length-1);
+  feedback.textContent = UI[currentLang].feedback[idx];
 }
-document.getElementById('progress-range').addEventListener('input', updateProgressRange);
+// Языковые подписи
+function updateUIlang() {
+  document.getElementById('ui-lang-label').textContent = UI[currentLang].lang_label;
+  document.getElementById('ui-progress-label').textContent = UI[currentLang].progress;
+  updateProgressRange();
+  renderLevelSelect();
+  renderMainPage();
+}
+document.getElementById('lang-switch').addEventListener('change',e=>{
+  currentLang = e.target.value;
+  doneTasks = {};
+  currentLevel = null;
+  updateUIlang();
+});
+// Старт
+renderLevelSelect();
 renderMainPage();
 updateProgressRange();
 </script>
