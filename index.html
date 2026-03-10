@@ -5,171 +5,176 @@
   <title>Интерактивный диктант</title>
   <style>
     html, body {
-      font-family: 'Segoe UI', Arial, sans-serif; 
-      background: transparent !important; 
-      margin: 0; 
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: transparent !important;
+      margin: 0;
       padding: 0;
     }
     #dictation-game {
       max-width: 730px;
       margin: 40px auto;
       padding: 30px;
-      background: transparent; /* Прозрачный фон */
+      background: transparent;
       box-shadow: none;
       border-radius: 0;
     }
-    .task-list { 
-      display: flex; 
-      flex-wrap: wrap; 
-      gap: 22px; 
-      justify-content: center; 
-      margin-bottom: 25px; 
+    .task-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 22px;
+      justify-content: center;
+      margin-bottom: 25px;
     }
-    .task-tile { 
-      width:170px; 
-      min-height: 184px; 
-      border:2px solid #ddaada; 
-      border-radius:10px; 
-      background: transparent; /* Прозрачный фон у карточки */
-      cursor:pointer; 
+    .task-tile {
+      width:170px;
+      min-height: 184px;
+      border:2px solid #ddaada;
+      border-radius:10px;
+      background: transparent;
+      cursor:pointer;
       display:flex;
       flex-direction:column;
       align-items:center;
-      justify-content:center; 
-      position:relative; 
+      justify-content:center;
+      position:relative;
       transition: box-shadow 0.2s;
     }
-    .task-tile.solved { 
-      filter: grayscale(0.75); 
-      opacity:0.6; 
+    .task-tile.solved {
+      filter: grayscale(0.75);
+      opacity:0.6;
       pointer-events:none;
     }
-    .task-tile img { 
-      max-width:130px; 
-      max-height:120px; 
-      margin-bottom: 5px; 
+    .task-tile img {
+      max-width:130px;
+      max-height:120px;
+      margin-bottom: 5px;
     }
-    .no-image { 
-      width:130px; 
+    .no-image {
+      width:130px;
       height:120px;
       display:flex;
       align-items:center;
       justify-content:center;
-      background:rgba(244,229,245,0.5); /* Полупрозрачная заглушка */
+      background:rgba(244,229,245,0.5);
       color:#bd79a8;
       font-size:15px;
       border-radius:7px;
       margin-bottom:5px;
     }
-    .def { 
+    .def {
       padding:24px 12px;
-      text-align:center; 
-      color:#555; 
+      text-align:center;
+      color:#555;
       background:transparent;
     }
-    .success-overlay { 
-      position:absolute; 
+    .success-overlay {
+      position:absolute;
       left:0;right:0; top:0;bottom:0;
       display:flex;
       flex-direction:column;
-      align-items:center;justify-content:center; 
-      background:rgba(255,255,255,0.7); /* полупрозрачная белая плашка */
-      border-radius:10px; 
+      align-items:center;justify-content:center;
+      background:rgba(255,255,255,0.7);
+      border-radius:10px;
       font-weight:bold;
     }
-    .success-overlay img { 
-      max-width:70px; 
+    .success-overlay img {
+      max-width:70px;
       margin-top:10px;
     }
     .task-view { text-align:center; }
     .easy-task, .hard-task { margin:28px 0; }
-    #letter-box { 
-      min-height: 48px; 
+    #letter-box {
+      min-height: 48px;
       display:inline-block;
       padding:9px 6px;
-      border:1px dashed #ccc; 
+      border:1px dashed #ccc;
       border-radius:7px;
-      background:rgba(255,255,255,0.5); /* Полупрозрачная белая подложка */
+      background:rgba(255,255,255,0.5);
     }
-    #letter-box .letter { 
-      display:inline-block; 
-      font-size:24px; 
-      background:rgba(239,221,245,0.7); 
-      margin:0 2px; 
-      padding:7px 13px; 
-      border-radius:6px; 
-      margin-bottom:3px; 
-      cursor:grab; 
+    #letter-box .letter {
+      display:inline-block;
+      font-size:24px;
+      background:rgba(239,221,245,0.7);
+      margin:0 2px;
+      padding:7px 13px;
+      border-radius:6px;
+      margin-bottom:3px;
+      cursor:pointer;
       user-select:none;
+      transition:box-shadow 0.1s;
     }
-    .hard-task input { 
-      font-size:22px; 
-      padding:7px 12px; 
-      border-radius:6px; 
-      border:1px solid #bc9dce; 
+    #letter-box .letter.selected {
+      outline:2px solid #833c94;
+      box-shadow: 0 0 0 4px #e7d3f1;
     }
-    button { 
-      background:#833c94; 
-      color:#fff; 
-      border:0; 
-      padding:7px 18px; 
-      border-radius:7px; 
-      font-size:17px; 
-      cursor:pointer; 
+    .hard-task input {
+      font-size:22px;
+      padding:7px 12px;
+      border-radius:6px;
+      border:1px solid #bc9dce;
+    }
+    button {
+      background:#833c94;
+      color:#fff;
+      border:0;
+      padding:7px 18px;
+      border-radius:7px;
+      font-size:17px;
+      cursor:pointer;
       margin-top:8px;
     }
-    #positive-feedback { 
-      margin-top:22px; 
+    #positive-feedback {
+      margin-top:22px;
       font-size:20px;
     }
-    #positive-feedback img { 
-      max-width:70px; 
-      margin-top:10px; 
+    #positive-feedback img {
+      max-width:70px;
+      margin-top:10px;
     }
-    .scale { 
-      margin-top:30px; 
-      text-align:center; 
+    .scale {
+      margin-top:30px;
+      text-align:center;
     }
-    .circle { 
-      display:inline-block; 
-      width:32px; 
+    .circle {
+      display:inline-block;
+      width:32px;
       height:32px;
-      line-height:32px; 
+      line-height:32px;
       background:rgba(236,228,245,0.5);
-      border-radius:50%; 
-      margin:0 4px; 
+      border-radius:50%;
+      margin:0 4px;
       font-size:21px;
-      vertical-align:middle; 
-      cursor:pointer; 
+      vertical-align:middle;
+      cursor:pointer;
       color:#833c94;
       transition:background 0.2s, color 0.2s, border 0.2s;
     }
     .circle.selected { background:#833c94; color:#fff;}
     #final-feedback {
-      text-align:center; 
-      font-size:19px; 
+      text-align:center;
+      font-size:19px;
       margin-top:23px;
       background:transparent;
     }
     .game-controls {
-      display: flex; 
-      justify-content: end; 
+      display: flex;
+      justify-content: end;
       align-items: center;
       gap:15px;
       margin-bottom: 10px;
     }
-    .desc { 
-      background:rgba(231, 211, 241, 0.6); 
-      color:#49285d; 
-      border-radius:7px; 
-      font-size:17px; 
-      padding:9px 11px; 
-      margin: 0 auto 22px auto; 
+    .desc {
+      background:rgba(231, 211, 241, 0.6);
+      color:#49285d;
+      border-radius:7px;
+      font-size:17px;
+      padding:9px 11px;
+      margin: 0 auto 22px auto;
       max-width: 550px;
     }
     select {
-      padding:7px 9px; 
-      border-radius:6px; 
+      padding:7px 9px;
+      border-radius:6px;
       border:1px solid #bc9dce;
     }
   </style>
@@ -182,7 +187,7 @@
     const TRANSLATIONS = {
       "ru": {
         title: "Интерактивный диктант",
-        instruction_easy: "Нажмите на карточку и переставьте буквы в правильном порядке, чтобы получить слово.",
+        instruction_easy: "Нажмите на карточку и, поочередно кликая по двум буквам, собирайте слово в правильном порядке.",
         instruction_hard: "Нажмите на карточку и напечатайте слово полностью.",
         no_image: "Нет изображения",
         btn_check: "Проверить",
@@ -195,7 +200,7 @@
       },
       "en": {
         title: "Interactive dictation",
-        instruction_easy: "Click a card and re-arrange the letters in the correct order to get the word.",
+        instruction_easy: "Click a card, then by clicking two letters in turn, swap and arrange them to make the word.",
         instruction_hard: "Click a card and type the word fully.",
         no_image: "No image",
         btn_check: "Check",
@@ -210,7 +215,6 @@
 
     let currentLang = "ru";
 
-    // Конфиг игры
     const gameConfig = {
       level: "easy", // "easy" — собрать слово из букв; "hard" — ввести вручную
       words: [
@@ -349,7 +353,7 @@
           </div>
         </div>
       `;
-      if (gameConfig.level === "easy") enableDragAndDrop();
+      if (gameConfig.level === "easy") enableClickSwap();
       if (gameConfig.level === "hard") {
         let inp = document.getElementById('input-answer');
         inp.addEventListener('keydown', function(e){
@@ -364,12 +368,40 @@
       const shuffled = shuffle(word.answer.split(''));
       return `
         <div class="easy-task">
-          <div id="letter-box">${shuffled.map(l=>`<span class="letter" draggable="true">${l}</span>`).join('')}</div>
+          <div id="letter-box">${shuffled.map((l, i)=>`<span class="letter" data-idx="${i}">${l}</span>`).join('')}</div>
           <div style="margin-top:12px;">
             <button onclick="checkEasyAnswer('${word.answer}')">${tr("btn_check")}</button>
           </div>
         </div>
       `;
+    }
+
+    // CLICK SWAP вместо drag-n-drop!
+    function enableClickSwap() {
+      let letterBox = document.getElementById('letter-box');
+      if (!letterBox) return;
+      let selectedIdx = null;
+      let nodes = Array.from(letterBox.children);
+      nodes.forEach((el, idx) => {
+        el.onclick = () => {
+          if (selectedIdx === null) {
+            el.classList.add('selected');
+            selectedIdx = idx;
+          } else if (selectedIdx !== idx) {
+            // Обмен местами
+            let a = nodes[selectedIdx], b = nodes[idx];
+            let temp = a.textContent;
+            a.textContent = b.textContent;
+            b.textContent = temp;
+            a.classList.remove('selected');
+            selectedIdx = null;
+          } else {
+            // Снять выделение
+            el.classList.remove('selected');
+            selectedIdx = null;
+          }
+        };
+      });
     }
 
     function renderHardTask(word) {
@@ -383,25 +415,6 @@
 
     function shuffle(arr) {
       return arr.map(x=>[Math.random(),x]).sort().map(a=>a[1]);
-    }
-
-    function enableDragAndDrop() {
-      let dragSrcEl = null;
-      document.querySelectorAll('#letter-box .letter').forEach(el=>{
-        el.addEventListener('dragstart', function(e){
-          dragSrcEl = el;
-          e.dataTransfer.effectAllowed = 'move';
-          e.dataTransfer.setData('text/plain',el.textContent);
-        });
-        el.addEventListener('dragover',e=>e.preventDefault());
-        el.addEventListener('drop',function(e){
-          e.preventDefault();
-          if(dragSrcEl && dragSrcEl!==el){
-            let parent = el.parentNode;
-            parent.insertBefore(dragSrcEl, el);
-          }
-        });
-      });
     }
 
     window.checkEasyAnswer = function(answer) {
@@ -449,7 +462,6 @@
       return gameConfig.finalFeedbackScale[currentLang][2];
     }
 
-    // запуск игры
     renderMain();
   </script>
 </body>
