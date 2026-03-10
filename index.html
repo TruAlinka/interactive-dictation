@@ -3,466 +3,307 @@
 <head>
   <meta charset="UTF-8">
   <title>Интерактивный диктант</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    html, body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: transparent !important;
-      margin: 0;
-      padding: 0;
+    body { background: #f7faff; font-family: 'Segoe UI',sans-serif; color:#232056; margin:0;}
+    #main-page { display: flex; flex-wrap: wrap; gap: 24px; margin:16px 0 32px 0; justify-content:center;}
+    .task-card {
+      background: #fafaff;
+      border-radius: 14px;
+      box-shadow: 0 1px 8px #d9dbe7;
+      padding: 18px;
+      text-align: center;
+      width: 144px;
+      min-height: 130px;
+      cursor: pointer;
+      position: relative;
+      font-size: 17px;
+      transition: opacity 0.4s;
+      display: flex; flex-direction: column; justify-content:center; align-items:center;
+      min-height:150px;
     }
-    #dictation-game {
-      max-width: 730px;
-      margin: 40px auto;
-      padding: 30px;
-      background: transparent;
-      box-shadow: none;
-      border-radius: 0;
+    .task-card[disabled] { pointer-events: none; opacity: 0.5; }
+    .success-tag {
+      position: absolute;
+      top: 8px;
+      left: 5px;
+      background: #e0ffd7ee;
+      color: #25702c;
+      font-weight: bold;
+      padding: 3px 10px;
+      border-radius: 11px;
+      z-index: 10;
+      font-size: 16px;
+      box-shadow: 0 1px 4px #c1e2c1;
     }
-    .task-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 22px;
-      justify-content: center;
-      margin-bottom: 25px;
+    #task-modal {
+      position: fixed; left:0; top:0; right:0; bottom:0; 
+      z-index: 999; background:rgba(20, 25, 42, 0.43);
+      display: none; align-items: center; justify-content: center;
     }
-    .task-tile {
-      width:170px;
-      min-height: 184px;
-      border:2px solid #ddaada;
-      border-radius:10px;
-      background: transparent;
-      cursor:pointer;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      position:relative;
-      transition: box-shadow 0.2s;
+    #task-modal>div {
+      background: #fff;
+      border-radius: 14px;
+      min-width: 330px;
+      min-height: 180px;
+      padding: 38px 30px 24px 30px;
+      position: relative;
+      text-align: center;
+      box-shadow: 0 2px 24px #b8aaff54;
     }
-    .task-tile.solved {
-      filter: grayscale(0.75);
-      opacity:0.6;
-      pointer-events:none;
+    .letters-box { min-height: 36px; margin: 16px 0 22px 0;}
+    .draggable-letter {
+      display: inline-block;
+      background: #e3e6f8;
+      color: #272659;
+      font-size: 23px;
+      padding: 7px 14px;
+      margin: 4px;
+      border-radius: 8px;
+      cursor: grab;
+      font-weight: bold;
+      box-shadow: 0 0 3px #acaaff60;
+      user-select: none;
+      transition: background .23s;
     }
-    .task-tile img {
-      max-width:130px;
-      max-height:120px;
-      margin-bottom: 5px;
+    .draggable-letter.drag-over {
+      background: #ffea80;
+      border: 2px solid #e0ad00;
     }
-    .no-image {
-      width:130px;
-      height:120px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      background:rgba(244,229,245,0.5);
-      color:#bd79a8;
-      font-size:15px;
-      border-radius:7px;
-      margin-bottom:5px;
-    }
-    .def {
-      padding:24px 12px;
-      text-align:center;
-      color:#555;
-      background:transparent;
-    }
-    .success-overlay {
-      position:absolute;
-      left:0;right:0; top:0;bottom:0;
-      display:flex;
-      flex-direction:column;
-      align-items:center;justify-content:center;
-      background:rgba(255,255,255,0.7);
-      border-radius:10px;
-      font-weight:bold;
-    }
-    .success-overlay img {
-      max-width:70px;
-      margin-top:10px;
-    }
-    .task-view { text-align:center; }
-    .easy-task, .hard-task { margin:28px 0; }
-    #letter-box {
-      min-height: 48px;
-      display:inline-block;
-      padding:9px 6px;
-      border:1px dashed #ccc;
-      border-radius:7px;
-      background:rgba(255,255,255,0.5);
-    }
-    #letter-box .letter {
-      display:inline-block;
-      font-size:24px;
-      background:rgba(239,221,245,0.7);
-      margin:0 2px;
-      padding:7px 13px;
-      border-radius:6px;
-      margin-bottom:3px;
-      cursor:pointer;
-      user-select:none;
-      transition:box-shadow 0.1s;
-    }
-    #letter-box .letter.selected {
-      outline:2px solid #833c94;
-      box-shadow: 0 0 0 4px #e7d3f1;
-    }
-    .hard-task input {
-      font-size:22px;
-      padding:7px 12px;
-      border-radius:6px;
-      border:1px solid #bc9dce;
-    }
-    button {
-      background:#833c94;
-      color:#fff;
-      border:0;
-      padding:7px 18px;
-      border-radius:7px;
-      font-size:17px;
-      cursor:pointer;
-      margin-top:8px;
-    }
-    #positive-feedback {
-      margin-top:22px;
-      font-size:20px;
-    }
-    #positive-feedback img {
-      max-width:70px;
-      margin-top:10px;
-    }
-    .scale {
-      margin-top:30px;
-      text-align:center;
-    }
-    .circle {
-      display:inline-block;
-      width:32px;
-      height:32px;
-      line-height:32px;
-      background:rgba(236,228,245,0.5);
-      border-radius:50%;
-      margin:0 4px;
-      font-size:21px;
-      vertical-align:middle;
-      cursor:pointer;
-      color:#833c94;
-      transition:background 0.2s, color 0.2s, border 0.2s;
-    }
-    .circle.selected { background:#833c94; color:#fff;}
-    #final-feedback {
-      text-align:center;
-      font-size:19px;
-      margin-top:23px;
-      background:transparent;
-    }
-    .game-controls {
-      display: flex;
-      justify-content: end;
-      align-items: center;
-      gap:15px;
-      margin-bottom: 10px;
-    }
-    .desc {
-      background:rgba(231, 211, 241, 0.6);
-      color:#49285d;
-      border-radius:7px;
-      font-size:17px;
-      padding:9px 11px;
-      margin: 0 auto 22px auto;
-      max-width: 550px;
-    }
-    select {
-      padding:7px 9px;
-      border-radius:6px;
-      border:1px solid #bc9dce;
+    .letters-box.touch-mode .draggable-letter {cursor:pointer;}
+    #progress-bar {margin: 22px 0 18px 0; text-align:center;}
+    #progress-feedback {margin-left: 15px; color:#14914c; font-weight:500;}
+    @media(max-width:600px){
+      #task-modal>div { min-width:0; width:90vw;}
+      .task-card {width:45vw; min-width:116px;}
     }
   </style>
 </head>
 <body>
-  <div id="dictation-game"></div>
+<div id="main-page"></div>
+<div id="task-modal"></div>
+<div id="progress-bar">
+  <label>Отметь свой прогресс:
+    <input type="range" id="progress-range" min="0" max="3" value="0">
+  </label>
+  <span id="progress-feedback"></span>
+</div>
+<script>
+// ----- Настраиваемые задания -----
+const dictationTasks = [
+  {
+    id: 1,
+    type: 'image',
+    image: 'https://www.kindpng.com/picc/m/21-214439_cat-png-image-cartoon-cat-png-transparent-png.png',
+    definition: '',
+    answer: 'кот',
+    feedback: 'Верно! 🐾',
+    mode: 'letters'
+  },
+  {
+    id: 2,
+    type: 'definition',
+    image: '',
+    definition: 'Маленькое пушистое домашнее животное, мурлычет.',
+    answer: 'кот',
+    feedback: 'Прекрасно!',
+    mode: 'input'
+  },
+  {
+    id: 3,
+    type: 'image',
+    image: 'https://pngimg.com/uploads/dog/dog_PNG50348.png',
+    definition: '',
+    answer: 'пёс',
+    feedback: '👏 Готово!',
+    mode: 'letters'
+  }
+];
+// --------------------------------
+let currentTask = null;
+let doneTasks = {};
+const progressRange = document.getElementById('progress-range');
+progressRange.max = dictationTasks.length;
 
-  <script>
-    // Тексты для разных языков
-    const TRANSLATIONS = {
-      "ru": {
-        title: "Интерактивный диктант",
-        instruction_easy: "Нажмите на карточку и, поочередно кликая по двум буквам, собирайте слово в правильном порядке.",
-        instruction_hard: "Нажмите на карточку и напечатайте слово полностью.",
-        no_image: "Нет изображения",
-        btn_check: "Проверить",
-        btn_back: "Вернуться",
-        scale: "Отметь свой результат:",
-        final_1: "Ты потрясающе справился!",
-        final_2: "Еще чуть-чуть до совершенства!",
-        final_3: "Попробуй еще раз!",
-        select_language: "Язык интерфейса"
-      },
-      "en": {
-        title: "Interactive dictation",
-        instruction_easy: "Click a card, then by clicking two letters in turn, swap and arrange them to make the word.",
-        instruction_hard: "Click a card and type the word fully.",
-        no_image: "No image",
-        btn_check: "Check",
-        btn_back: "Back",
-        scale: "Mark your result:",
-        final_1: "Fantastic job!",
-        final_2: "Just a little bit to perfection!",
-        final_3: "Try again!",
-        select_language: "Interface language"
+function renderMainPage() {
+  const main = document.getElementById('main-page');
+  main.innerHTML = '';
+  dictationTasks.forEach(task => {
+    const card = document.createElement('div');
+    card.className = 'task-card';
+    // Затемнение и плашка успеха
+    if (doneTasks[task.id]) {
+      card.setAttribute('disabled', '');
+      const success = document.createElement('div');
+      success.className = 'success-tag';
+      if (task.feedback.endsWith('.gif') || task.feedback.endsWith('.png')) {
+        success.innerHTML = `<img src="${task.feedback}" alt="success" style="width:38px;">`;
+      } else {
+        success.innerHTML = `<span>${task.feedback}</span>`;
       }
-    };
+      card.appendChild(success);
+    }
+    // Контент карточки
+    if (task.type === 'image') {
+      card.innerHTML += `<div><img src="${task.image}" alt="task" style="width:70px;"></div>`;
+    } else {
+      card.innerHTML += `<div style="margin-top:18px;">${task.definition}</div>`;
+    }
+    card.onclick = () => { if (!doneTasks[task.id]) openTask(task); };
+    main.appendChild(card);
+  });
+}
 
-    let currentLang = "ru";
+function openTask(task) {
+  currentTask = task;
+  const modal = document.getElementById('task-modal');
+  modal.style.display = 'flex';
+  let taskModal = document.createElement('div');
+  if (task.mode === 'letters') {
+    let shuffled = shuffleLetters(task.answer);
+    taskModal.innerHTML = `
+      <div>Собери слово:</div>
+      <div class="letters-box" id="letters-box">${
+        shuffled.map((letter, i) =>
+          `<span class="draggable-letter" draggable="true" data-index="${i}">${letter}</span>`
+        ).join('')
+      }</div>
+      <button onclick="checkLettersAnswer()" style="margin-bottom:16px;">Проверить</button>
+      <div id="feedback"></div>
+      <button onclick="closeTask()" style="margin-top:12px;">Назад</button>
+    `;
+    modal.innerHTML = '';
+    modal.appendChild(taskModal);
+    enableDragAndDropTouch();
+  } else {
+    // Режим ввода текста
+    taskModal.innerHTML = `
+      <div>Введи слово:</div>
+      <input type="text" id="text-input" autocomplete="off" style="font-size:22px;padding:4px;text-align:center;">
+      <button onclick="checkTextInput()" style="margin-left:10px;">Проверить</button>
+      <div id="feedback"></div>
+      <button onclick="closeTask()" style="display:block;margin:18px auto 0;">Назад</button>
+    `;
+    modal.innerHTML = '';
+    modal.appendChild(taskModal);
+    setTimeout(()=>document.getElementById('text-input').focus(), 100);
+  }
+}
+// --- Drag & Drop и Touch для букв ---
+function enableDragAndDropTouch() {
+  let dragged = null;
+  const box = document.getElementById('letters-box');
+  const letters = box.querySelectorAll('.draggable-letter');
 
-    const gameConfig = {
-      level: "easy", // "easy" — собрать слово из букв; "hard" — ввести вручную
-      words: [
-        {
-          id: 1,
-          image: "https://upload.wikimedia.org/wikipedia/commons/6/6e/Golde33443.jpg",
-          definition: null,
-          answer: "КОТ",
-          feedback: {
-            text: {ru:"Отлично, верно!",en:"Great, correct!"},
-            gif: ""
-          }
-        },
-        {
-          id: 2,
-          image: null,
-          definition: {ru:"Домашнее животное, лающее на почтальона",en:"A pet barking at the postman"},
-          answer: "СОБАКА",
-          feedback: {
-            text: {ru:"Молодец!",en:"Well done!"},
-            gif: "https://media.giphy.com/media/v6aOjy0Qo1fIA/giphy.gif"
-          }
-        },
-        {
-          id: 3,
-          image: "https://upload.wikimedia.org/wikipedia/commons/3/34/Red_Apple.jpg",
-          definition: null,
-          answer: "ЯБЛОКО",
-          feedback: {
-            text: {ru:"Верно! 👍",en:"Correct! 👍"},
-            gif: ""
-          }
-        }
-      ],
-      finalFeedbackScale: {
-        ru:["Ты потрясающе справился!","Еще чуть-чуть до совершенства!","Попробуй еще раз!"],
-        en:["Fantastic job!","Just a little bit to perfection!","Try again!"]
+  // Для Desktop
+  letters.forEach(l => {
+    l.addEventListener('dragstart', function(e){
+      dragged = this;
+      setTimeout(()=>this.style.opacity = "0.25", 0);
+    });
+    l.addEventListener('dragend', function(e){
+      this.style.opacity = "1";
+      dragged = null;
+      letters.forEach(el => el.classList.remove('drag-over'));
+    });
+    l.addEventListener('dragover', function(e){ e.preventDefault(); });
+    l.addEventListener('dragenter', function(e){ this.classList.add('drag-over'); });
+    l.addEventListener('dragleave', function(e){ this.classList.remove('drag-over'); });
+    l.addEventListener('drop', function(e) {
+      e.preventDefault();
+      if (!dragged || dragged === this) return;
+      const all = Array.from(box.children);
+      const draggedIdx = all.indexOf(dragged);
+      const dropIdx = all.indexOf(this);
+      if (draggedIdx < dropIdx) {
+        box.insertBefore(dragged, this.nextSibling);
+      } else {
+        box.insertBefore(dragged, this);
       }
-    };
-
-    const gameState = {
-      solved: [],
-      scaleMark: null
-    };
-
-    function tr(key) {
-      let trset = TRANSLATIONS[currentLang] || TRANSLATIONS["ru"];
-      return trset[key] || key;
-    }
-
-    function renderMain() {
-      const container = document.getElementById('dictation-game');
-      let allSolved = gameConfig.words.every(w => gameState.solved.includes(w.id));
-      container.innerHTML = `
-        <div class="game-controls">
-          <label for="lang">${tr('select_language')}:</label>
-          <select id="lang" onchange="changeLang(event)">
-            ${Object.keys(TRANSLATIONS).map(lang=>
-              `<option value="${lang}" ${lang===currentLang?"selected":""}>${lang.toUpperCase()}</option>`
-            ).join('')}
-          </select>
-        </div>
-        <h2 style="margin-bottom:10px;">${tr("title")}</h2>
-        <div class="desc">${
-          gameConfig.level === "easy"
-              ? tr("instruction_easy")
-              : tr("instruction_hard")
-        }</div>
-        <div class="task-list">
-          ${gameConfig.words.map(word => `
-            <div class="task-tile${gameState.solved.includes(word.id) ? ' solved' : ''}" onclick="openTask(${word.id})">
-              ${renderImageOrDef(word)}
-              ${gameState.solved.includes(word.id) ?
-                `<div class="success-overlay">
-                  <span>${word.feedback.text[currentLang] || word.feedback.text["ru"] || ""}</span>
-                  ${word.feedback.gif ? `<img src="${word.feedback.gif}">` : ''}
-                </div>` : ''}
-            </div>
-          `).join('')}
-        </div>
-        <div id="progress-scale">${renderScale()}</div>
-        ${allSolved ? `<div id="final-feedback">${renderFinalFeedback()}</div>` : ''}
-      `;
-      setTimeout(checkImages,100);
-    }
-
-    function renderImageOrDef(word) {
-      if (word.image) {
-        return `
-          <img src="${word.image}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"/>
-          <div class="no-image" style="display:none;">${tr("no_image")}</div>
-        `;
+      letters.forEach(el => el.classList.remove('drag-over'));
+    });
+  });
+  // Мобильный touch: тапаем две буквы по очереди — меняем местами
+  let firstTap = null;
+  box.classList.remove('touch-mode');
+  if ('ontouchstart' in window) {
+    box.classList.add('touch-mode');
+    letters.forEach(l => l.ontouchend = (e)=>{
+      e.preventDefault();
+      if (firstTap===null) {
+        firstTap = l;
+        l.style.background = "#ffe683";
+      } else if (firstTap!==l) {
+        swapElems(firstTap,l);
+        firstTap.style.background = "";
+        firstTap = null;
+      } else {
+        firstTap.style.background = "";
+        firstTap = null;
       }
-      if (word.definition) {
-        return `<div class="def">${typeof word.definition === 'string' ? word.definition : (word.definition[currentLang] || word.definition["ru"] || "")}</div>`;
+    });
+    document.body.ontouchstart = (e)=>{
+      if(firstTap && !e.target.classList.contains('draggable-letter')) {
+        firstTap.style.background = ""; firstTap=null;
       }
-      return `<div class="no-image">${tr("no_image")}</div>`;
     }
-
-    function checkImages() {
-      document.querySelectorAll('.task-tile img').forEach(img=>{
-        if(!img.complete || img.naturalWidth===0) {
-          img.style.display = "none";
-          if (img.nextElementSibling) img.nextElementSibling.style.display='flex';
-        }
-      });
-    }
-
-    window.changeLang = function(e){
-      currentLang = e.target.value || "ru";
-      renderMain();
-    };
-
-    window.openTask = function(id) {
-      const word = gameConfig.words.find(w => w.id === id);
-      if(gameState.solved.includes(id)) return;
-      const container = document.getElementById('dictation-game');
-      container.innerHTML = `
-        <div class="game-controls">
-          <label for="lang">${tr('select_language')}:</label>
-          <select id="lang" onchange="changeLang(event)">
-            ${Object.keys(TRANSLATIONS).map(lang=>
-              `<option value="${lang}" ${lang===currentLang?"selected":""}>${lang.toUpperCase()}</option>`
-            ).join('')}
-          </select>
-        </div>
-        <h2 style="margin-bottom:10px;">${tr("title")}</h2>
-        <div class="desc">${ gameConfig.level === "easy" ? tr("instruction_easy") : tr("instruction_hard") }</div>
-        <div class="task-view">
-          ${renderImageOrDef(word)}
-          ${gameConfig.level === "easy" ? renderEasyTask(word) : renderHardTask(word)}
-          <div id="positive-feedback" style="display:none;">
-            <span>${word.feedback.text[currentLang] || word.feedback.text["ru"] || ""}</span>
-            ${word.feedback.gif ? `<img src="${word.feedback.gif}">` : ''}
-            <br><button onclick="markSolvedAndReturn(${word.id})">${tr("btn_back")}</button>
-          </div>
-        </div>
-      `;
-      if (gameConfig.level === "easy") enableClickSwap();
-      if (gameConfig.level === "hard") {
-        let inp = document.getElementById('input-answer');
-        inp.addEventListener('keydown', function(e){
-          if(e.key === "Enter") checkHardAnswer(word.answer);
-        });
-        inp.focus();
-      }
-      setTimeout(checkImages,100);
-    };
-
-    function renderEasyTask(word) {
-      const shuffled = shuffle(word.answer.split(''));
-      return `
-        <div class="easy-task">
-          <div id="letter-box">${shuffled.map((l, i)=>`<span class="letter" data-idx="${i}">${l}</span>`).join('')}</div>
-          <div style="margin-top:12px;">
-            <button onclick="checkEasyAnswer('${word.answer}')">${tr("btn_check")}</button>
-          </div>
-        </div>
-      `;
-    }
-
-    // CLICK SWAP вместо drag-n-drop!
-    function enableClickSwap() {
-      let letterBox = document.getElementById('letter-box');
-      if (!letterBox) return;
-      let selectedIdx = null;
-      let nodes = Array.from(letterBox.children);
-      nodes.forEach((el, idx) => {
-        el.onclick = () => {
-          if (selectedIdx === null) {
-            el.classList.add('selected');
-            selectedIdx = idx;
-          } else if (selectedIdx !== idx) {
-            // Обмен местами
-            let a = nodes[selectedIdx], b = nodes[idx];
-            let temp = a.textContent;
-            a.textContent = b.textContent;
-            b.textContent = temp;
-            a.classList.remove('selected');
-            selectedIdx = null;
-          } else {
-            // Снять выделение
-            el.classList.remove('selected');
-            selectedIdx = null;
-          }
-        };
-      });
-    }
-
-    function renderHardTask(word) {
-      return `
-        <div class="hard-task">
-          <input type="text" id="input-answer" autocomplete="off" placeholder="${tr("btn_check")}"/>
-          <button onclick="checkHardAnswer('${word.answer}')">${tr("btn_check")}</button>
-        </div>
-      `;
-    }
-
-    function shuffle(arr) {
-      return arr.map(x=>[Math.random(),x]).sort().map(a=>a[1]);
-    }
-
-    window.checkEasyAnswer = function(answer) {
-      const letters = [...document.querySelectorAll('#letter-box .letter')].map(l => l.textContent).join('');
-      if(letters.toUpperCase() === answer.toUpperCase()) showPositiveFeedback();
-    };
-
-    window.checkHardAnswer = function(answer) {
-      const val = document.getElementById('input-answer').value;
-      if(val.trim().toUpperCase() === answer.toUpperCase()) showPositiveFeedback();
-    };
-
-    function showPositiveFeedback() {
-      document.getElementById('positive-feedback').style.display = 'block';
-    }
-
-    window.markSolvedAndReturn = function(id){
-      if (!gameState.solved.includes(id)) gameState.solved.push(id);
-      renderMain();
-    };
-
-    function renderScale() {
-      let lastMark = gameState.scaleMark;
-      let allDone = gameConfig.words.every((w,i)=>gameState.solved.includes(w.id));
-      let html = '';
-      for(let i=0; i<gameConfig.words.length; i++) {
-        html += `<span class="circle${lastMark==i?" selected":""}" onclick="markScale(${i})">${lastMark!==null && i<=lastMark?'✔️':''}</span>`;
-      }
-      return allDone
-        ? `<div class="scale"><div>${tr("scale")}</div>${html}</div>`
-        : '';
-    }
-
-    window.markScale = function(i){
-      gameState.scaleMark = i;
-      renderMain();
-    };
-
-    function renderFinalFeedback() {
-      if(gameState.scaleMark===null) return '';
-      const n = gameConfig.words.length;
-      const mark = gameState.scaleMark+1;
-      if(mark >= n) return gameConfig.finalFeedbackScale[currentLang][0];
-      if(mark===n-1) return gameConfig.finalFeedbackScale[currentLang][1];
-      return gameConfig.finalFeedbackScale[currentLang][2];
-    }
-
-    renderMain();
-  </script>
+  }
+}
+function swapElems(a,b){
+  var ap = a.parentNode, asib = a.nextSibling;
+  if (asib === b) { ap.insertBefore(b,a); }
+  else { ap.insertBefore(a,b); }
+}
+function shuffleLetters(word) {
+  let arr = word.split('');
+  if(arr.length<=3) return arr;
+  let shuffled;
+  do {
+    shuffled = arr.slice().sort(()=>Math.random()-0.5);
+  } while(shuffled.join('')===word);
+  return shuffled;
+}
+function checkLettersAnswer() {
+  const letters = Array.from(document.querySelectorAll('.draggable-letter')).map(el=>el.innerText).join('');
+  if (letters === currentTask.answer) showPositiveFeedback();
+}
+function checkTextInput() {
+  const input = document.getElementById('text-input').value.trim();
+  if(input.toLowerCase() === currentTask.answer.toLowerCase()) showPositiveFeedback();
+}
+function showPositiveFeedback() {
+  const area = document.getElementById('feedback');
+  const isGif = (currentTask.feedback.endsWith('.gif') || currentTask.feedback.endsWith('.png'));
+  area.innerHTML = isGif ?
+    `<img src="${currentTask.feedback}" alt="success" style="width:85px;">` :
+    `<span style="font-size:22px;color:#208a4e;font-weight:bold;">${currentTask.feedback}</span><br>`;
+  area.innerHTML += `<button onclick="finishTask()" style="margin:16px auto 0;">На главную</button>`;
+}
+function closeTask() {
+  document.getElementById('task-modal').style.display = 'none';
+  renderMainPage();
+}
+function finishTask() {
+  doneTasks[currentTask.id] = true;
+  closeTask();
+  updateProgressRange();
+}
+const RANGE_FEEDBACKS = [
+  'Ещё всё впереди!',
+  'Хороший старт!',
+  'Ты почти у цели!',
+  'Великолепно! Всё получилось!'
+];
+function updateProgressRange() {
+  const range = document.getElementById('progress-range');
+  const feedback = document.getElementById('progress-feedback');
+  range.value = Object.keys(doneTasks).length;
+  let idx = Math.min(range.value, RANGE_FEEDBACKS.length-1);
+  feedback.textContent = RANGE_FEEDBACKS[idx];
+}
+document.getElementById('progress-range').addEventListener('input', updateProgressRange);
+renderMainPage();
+updateProgressRange();
+</script>
 </body>
 </html>
